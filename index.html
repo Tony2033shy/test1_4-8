@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最長公共子序列 (LCS) 擴充版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Lato:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* =====================================================================
+           1. THE SETUP & BASE STYLING
+           ===================================================================== */
+        * { box-sizing: border-box; }
+        p { margin: 0; margin-bottom: 15px; }
+
+        body {
+            background-color: #0f172a; /* Slate 900 */
+            display: grid;
+            gap: 40px;
+            grid-template-columns: 1fr;
+            margin: 0;
+            min-height: 100vh;
+            padding: 40px 0;
+            place-items: center;
+        }
+
+        .slide-container {
+            align-items: center;
+            background-color: #1e293b; /* Slate 800 */
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            font-family: 'Lato', sans-serif;
+            height: 720px;
+            justify-content: flex-start;
+            overflow: hidden;
+            padding: 60px;
+            position: relative;
+            width: 1280px;
+            border: 1px solid #334155; /* Slate 700 */
+        }
+
+        /* Abstract algorithmic background pattern */
+        .slide-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                        radial-gradient(circle at 10% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .slide-container > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* =====================================================================
+           2. TYPOGRAPHY
+           ===================================================================== */
+        h1, h2, h3, h4 { color: #f8fafc; font-family: 'Poppins', sans-serif; margin: 0; }
+        p, li, td, th { color: #cbd5e1; line-height: 1.6; }
+
+        .slide-title {
+            font-size: 42px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-align: left;
+            width: 100%;
+            color: #f8fafc;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 15px;
+        }
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* MathML Global Styles */
+        math { display: math; color: #f8fafc; font-family: 'Fira Code', monospace; font-size: 28px; }
+        mi { font-style: italic; color: #38bdf8; }
+        mn { color: #10b981; }
+        mo { color: #94a3b8; padding: 0 4px; }
+        mtext { color: #cbd5e1; font-family: 'Lato', sans-serif; font-style: normal; }
+
+        .mono-text { font-family: 'Fira Code', monospace; color: #38bdf8; }
+
+        /* Code Block Styling */
+        .code-block {
+            background-color: #020617;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+            font-family: 'Fira Code', monospace;
+            font-size: 17px;
+            line-height: 1.5;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            width: 100%;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .code-keyword { color: #c678dd; } 
+        .code-function { color: #61afef; } 
+        .code-string { color: #98c379; } 
+        .code-comment { color: #5c6370; font-style: italic; } 
+        .code-number { color: #d19a66; } 
+
+        /* =====================================================================
+           3. LAYOUT DEFINITIONS
+           ===================================================================== */
+        
+        .title-layout { text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%; }
+        .title-layout h1 { font-size: 72px; margin-bottom: 20px; }
+        .title-layout h1 span { color: #38bdf8; }
+        .title-layout .subtitle { font-size: 26px; color: #94a3b8; max-width: 800px; margin-top: 20px; }
+
+        .two-column { align-items: center; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; width: 100%; }
+        .two-column.tiled { align-items: stretch; }
+        .two-column.tiled > div { background-color: #0f172a; border-radius: 16px; border: 1px solid #334155; padding: 40px; text-align: left; }
+        .two-column.tiled h3 { color: #38bdf8; font-size: 32px; margin-bottom: 20px; }
+        .two-column.tiled p { font-size: 22px; }
+
+        .image-wrapper { border-radius: 16px; height: 400px; width: 100%; overflow: hidden; border: 1px solid #334155; background-color: #0f172a; display: flex; justify-content: center; align-items: center; }
+        .image-wrapper img { height: 100%; max-width: 100%; object-fit: contain; }
+
+        .bullet-list { width: 100%; }
+        .bullet-list ul { list-style: none; margin: 0; padding: 0; }
+        .bullet-list li { margin-bottom: 30px; padding-left: 50px; position: relative; font-size: 22px; color: #cbd5e1; }
+        .bullet-list i.bullet-icon { font-size: 28px; left: 0; position: absolute; top: 5px; }
+        .bullet-list li strong { color: #f8fafc; font-weight: 700; font-size: 26px; }
+
+        #formula-container { background-color: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 40px; width: 100%; text-align: center; }
+
+        /* Original Small Table Styles */
+        .table-layout { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .small-table { border-collapse: collapse; width: 80%; background-color: #0f172a; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .small-table th, .small-table td { border: 1px solid #334155; padding: 20px; text-align: center; font-size: 24px; font-family: 'Fira Code', monospace; }
+        .small-table th { background-color: #0f172a; color: #38bdf8; font-weight: 700; }
+        .small-table td.highlight { color: #10b981; font-weight: 700; background-color: rgba(16, 185, 129, 0.1); }
+
+        .highlight-numbers-layout > div:first-child { flex: 0 0 45%; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .highlight-numbers-layout .number { margin-bottom: 20px; }
+        .highlight-numbers-layout .number math { font-size: 90px; font-weight: 700; }
+        .highlight-numbers-layout .number-label { font-size: 26px; font-weight: 700; color: #94a3b8; letter-spacing: 2px; }
+
+        .qa-layout { margin: 0 auto; text-align: center; width: 100%; }
+        .qa-layout h2 { font-size: 90px; margin-bottom: 20px; color: #38bdf8; letter-spacing: 4px; }
+        .qa-layout p { font-size: 28px; color: #cbd5e1; }
+
+        .concept-box { background-color: #020617; border: 2px dashed #475569; border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 20px; }
+        .concept-box .string-compare { font-size: 36px; font-family: 'Fira Code', monospace; letter-spacing: 5px; color: #f8fafc; }
+        .concept-box .highlight-match { color: #10b981; font-weight: bold; border-bottom: 3px solid #10b981; }
+        .concept-box .highlight-diff { color: #ef4444; font-weight: bold; border-bottom: 3px solid #ef4444; }
+
+        /* Big Table Styles (Fixed sizing to prevent cutoff) */
+        .big-table-container { width: 100%; display: flex; justify-content: center; position: relative; }
+        .big-table { border-collapse: collapse; background-color: #f8fafc; color: #0f172a; border: 2px solid #334155; font-family: 'Lato', sans-serif; position: relative; z-index: 2;}
+        .big-table th, .big-table td { border: 1px solid #94a3b8; width: 42px; height: 42px; text-align: center; font-size: 18px; font-weight: 600; padding: 0; position: relative;}
+        .big-table th { background-color: #e2e8f0; color: #475569; font-weight: 700; transition: all 0.3s ease; }
+        .big-table td.match-red { color: #ef4444; }
+        .big-table td { transition: all 0.3s ease; }
+
+        /* Interactive Path Styling */
+        .table-overlay-container { position: relative; display: inline-block; }
+        #path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+        .path-line { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: draw 1.2s forwards ease-in-out; }
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+        
+        .active-header { position: relative; }
+        .active-header::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 32px; height: 32px; border-radius: 50%; opacity: 0.3; z-index: -1;
+            background-color: currentColor;
+        }
+
+        .path-controls { display: flex; flex-direction: column; gap: 15px; width: 160px; margin-right: 40px; }
+        .path-btn { 
+            padding: 12px 15px; font-size: 20px; font-weight: bold; font-family: 'Fira Code', monospace;
+            cursor: pointer; border: 2px solid #334155; border-radius: 8px; 
+            background: #1e293b; color: #cbd5e1; transition: all 0.2s; letter-spacing: 1px;
+        }
+        .path-btn:hover { background: #334155; color: #f8fafc; }
+        .path-btn.active { color: #f8fafc; box-shadow: 0 0 15px rgba(0,0,0,0.3); transform: scale(1.05); }
+
+        .flow-container { display: flex; align-items: center; justify-content: center; gap: 60px; width: 100%; margin-top: 20px; }
+        .flow-box { background-color: transparent; border: none; padding: 0; text-align: center; }
+        .flow-box p { font-family: 'Fira Code', monospace; font-size: 32px; margin-bottom: 15px; color: #f8fafc; font-weight: bold; letter-spacing: 2px; }
+        .flow-box h3 { font-family: 'Fira Code', monospace; font-size: 36px; color: #f8fafc; margin: 0; }
+        .flow-box.list { text-align: left; }
+        .flow-box.list ul { list-style: none; padding: 0; margin: 0; font-family: 'Fira Code', monospace; font-size: 28px; color: #f8fafc; font-weight: bold; }
+        .flow-box.list li { margin-bottom: 10px; }
+        .flow-arrow { font-size: 80px; color: #f8fafc; }
+    </style>
+</head>
+<body>
+
+    <!-- Slide 1: Title_Slide -->
+    <div class="slide-container" id="slide1">
+        <div class="title-layout">
+            <h1>最長公共子序列 <span>(LCS)</span></h1>
+            <p class="subtitle">動態規劃 (Dynamic Programming) 的經典演算法解析</p>
+        </div>
+    </div>
+
+    <!-- Slide 2: Image_Right_Text_Left (What is Subsequence) -->
+    <div class="slide-container" id="slide2">
+        <h2 class="slide-title">什麼是「子序列」(Subsequence)？</h2>
+        <div class="content-area">
+            <div class="two-column">
+                <div>
+                    <p style="font-size: 22px;"><strong>子序列</strong>是從原始字串中刪除部分字元（或不刪除），並且<strong>不改變剩餘字元相對順序</strong>所形成的新字串。</p>
+                    <p style="font-size: 22px;">它與「子字串」(Substring) 的最大差別在於，子序列中的字元在原字串中<strong>不需要連續</strong>。</p>
+                    <br>
+                    <p class="mono-text" style="font-size: 24px; margin-bottom: 20px;">例如字串 X = "ABCDE"</p>
+                    <div class="bullet-list">
+                        <ul>
+                            <li><i class="fa-solid fa-check bullet-icon" style="color:#10b981;"></i> <strong>"ACE"</strong> 是子序列（保留 A, C, E）。</li>
+                            <li><i class="fa-solid fa-times bullet-icon" style="color:#ef4444;"></i> <strong>"CAE"</strong> 不是子序列（C 不能在 A 前面）。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+                    <div class="image-wrapper">
+                        <img src="http://googleusercontent.com/image_collection/image_retrieval/16130885848760577109" alt="Abstract conceptual visualization of connected characters forming a sequence">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 3: Two_Column_Tiled_Text (Definition) -->
+    <div class="slide-container" id="slide3">
+        <h2 class="slide-title">LCS 的定義與重要性</h2>
+        <div class="content-area">
+            <div class="two-column tiled">
+                <div>
+                    <h3>核心任務</h3>
+                    <p>給定兩個字串 X 和 Y，找出它們共同擁有的<strong>最長子序列</strong>。</p>
+                    <br>
+                    <p class="mono-text">例如：<br>X = "ABCDGH"<br>Y = "AEDFHR"</p>
+                    <p>它們的 LCS 是 <span class="mono-text" style="color:#10b981;">"ADH"</span>，長度為 3。</p>
+                </div>
+                <div>
+                    <h3>為什麼重要？</h3>
+                    <p>LCS 是衡量兩個序列「相似度」的標準數學模型。當兩個序列的組成越相似，它們的最長公共子序列長度就會越長。</p>
+                    <p>這個單純的概念，構成了現代許多軟體與生物科技底層的基礎演算法。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 4: Multiple Solutions Flow -->
+    <div class="slide-container" id="slide4">
+        <h2 class="slide-title">動態規劃：擁有多重解答的可能性</h2>
+        <div class="content-area">
+            <div class="flow-container">
+                <div class="flow-box">
+                    <p>s1=ACBBCACB</p>
+                    <p>s2=CCABAACC</p>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-play"></i></div>
+                <div class="flow-box">
+                    <h3>LCS(s1,s2)=?</h3>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-play"></i></div>
+                <div class="flow-box list">
+                    <ul>
+                        <li>ABAC</li>
+                        <li>ABCC</li>
+                        <li>CBAC</li>
+                        <li>CBCC</li>
+                        <li>CCAB</li>
+                        <li>CCAC</li>
+                    </ul>
+                </div>
+            </div>
+            <p style="text-align: center; font-size: 24px; color: #38bdf8; margin-top: 60px; font-weight: bold; letter-spacing: 2px;">
+                動態規劃表可以幫我們找出所有可能！
+            </p>
+        </div>
+    </div>
+
+    <!-- Slide 5: Styled_Bullet_Points (Brute Force vs DP) -->
+    <div class="slide-container" id="slide5">
+        <h2 class="slide-title">解決方案：暴力破解 vs. 動態規劃</h2>
+        <div class="content-area">
+            <div class="bullet-list">
+                <ul>
+                    <li>
+                        <i class="fa-solid fa-skull bullet-icon" style="color:#ef4444;"></i>
+                        <strong>暴力破解法 (Brute Force)：</strong><br>
+                        枚舉字串 X 的所有可能子序列，再逐一檢查是否也是 Y 的子序列。若 X 長度為 m，子序列數量高達 <math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mn>2</mn><mi>m</mi></msup></math> 種。時間複雜度為 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>O</mi><mo>(</mo><mi>n</mi><mo>&#xB7;</mo><msup><mn>2</mn><mi>m</mi></msup><mo>)</mo></math>，當字串稍長時，計算量將呈指數級爆炸。
+                    </li>
+                    <li style="margin-top: 50px;">
+                        <i class="fa-solid fa-lightbulb bullet-icon" style="color:#10b981;"></i>
+                        <strong>動態規劃 (Dynamic Programming)：</strong><br>
+                        利用 LCS 問題具備的「最佳子結構」與「重疊子問題」特性，將大問題拆解成小問題，並把計算過的結果儲存在表格中，避免重複計算。時間複雜度可大幅降至 <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>O</mi><mo>(</mo><mi>m</mi><mo>&#xB7;</mo><mi>n</mi><mo>)</mo></math>。
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 6: Concept Match -->
+    <div class="slide-container" id="slide6">
+        <h2 class="slide-title">大哉問：怎麼把大問題拆小？ (字元相同時)</h2>
+        <div class="content-area">
+            <p style="font-size: 24px; text-align: center; margin-bottom: 20px;">假設我們正在比對兩個字串的「最後一個字元」：</p>
+            
+            <div class="concept-box">
+                <div class="string-compare">
+                    X = "AB<span class="highlight-match">C</span>"<br>
+                    Y = "AD<span class="highlight-match">C</span>"
+                </div>
+            </div>
+
+            <div class="bullet-list" style="margin-top: 30px; padding: 0 40px;">
+                <ul>
+                    <li>
+                        <i class="fa-solid fa-check-circle bullet-icon" style="color:#10b981;"></i>
+                        <strong>直覺思考：</strong>既然最後一個字元都是 'C'，那麼這個 'C' <strong>一定會包含在我們的最長公共子序列中</strong>！
+                    </li>
+                    <li style="margin-top: 20px;">
+                        <i class="fa-solid fa-arrow-right bullet-icon" style="color:#38bdf8;"></i>
+                        <strong>問題縮小：</strong>我們只要把 'C' 拿掉，去尋找前面剩餘部分 <span class="mono-text">"AB"</span> 和 <span class="mono-text">"AD"</span> 的 LCS 長度，然後再加上 1 (也就是這個 'C') 即可。
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 7: Concept Mismatch -->
+    <div class="slide-container" id="slide7">
+        <h2 class="slide-title">大哉問：怎麼把大問題拆小？ (字元不同時)</h2>
+        <div class="content-area">
+            <p style="font-size: 24px; text-align: center; margin-bottom: 20px;">如果最後一個字元「不一樣」呢？</p>
+            
+            <div class="concept-box">
+                <div class="string-compare">
+                    X = "ABC<span class="highlight-diff">D</span>"<br>
+                    Y = "ABC<span class="highlight-diff">E</span>"
+                </div>
+            </div>
+
+            <div class="bullet-list" style="margin-top: 30px; padding: 0 40px;">
+                <ul>
+                    <li>
+                        <i class="fa-solid fa-exclamation-triangle bullet-icon" style="color:#ef4444;"></i>
+                        <strong>直覺思考：</strong>因為 'D' 和 'E' 不同，它們<strong>不可能「同時」</strong>成為 LCS 的最後一個字元。
+                    </li>
+                    <li style="margin-top: 20px;">
+                        <i class="fa-solid fa-code-branch bullet-icon" style="color:#38bdf8;"></i>
+                        <strong>問題分岔：</strong>既然不可能同時出現，那我們就分兩條路走，看看哪條路找到的序列比較長：
+                        <br><br>
+                        <span style="display:inline-block; margin-left: 20px;">👉 路線 1：丟掉 X 的尾巴，拿 <span class="mono-text">"ABC"</span> 和 <span class="mono-text">"ABCE"</span> 繼續比。</span>
+                        <br>
+                        <span style="display:inline-block; margin-left: 20px; margin-top: 10px;">👉 路線 2：丟掉 Y 的尾巴，拿 <span class="mono-text">"ABCD"</span> 和 <span class="mono-text">"ABC"</span> 繼續比。</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 8: Formula Layout -->
+    <div class="slide-container" id="slide8">
+        <h2 class="slide-title">動態規劃：狀態轉移方程式</h2>
+        <div class="content-area">
+            <p style="font-size: 22px; text-align: center; margin-bottom: 30px;">
+                經過剛才的推導，我們將概念化為數學式。<br>
+                令 <span class="mono-text">dp[i][j]</span> 代表字串 <span class="mono-text">X[0..i-1]</span> 與 <span class="mono-text">Y[0..j-1]</span> 的 LCS 長度：
+            </p>
+            <div id="formula-container">
+                <math xmlns="http://www.w3.org/1998/Math/MathML">
+                    <mi>d</mi><mi>p</mi><mo>[</mo><mi>i</mi><mo>]</mo><mo>[</mo><mi>j</mi><mo>]</mo>
+                    <mo>=</mo>
+                    <mrow>
+                        <mo>{</mo>
+                        <mtable columnalign="left left" columnspacing="2em" rowspacing="12pt">
+                            <mtr>
+                                <mtd><mn>0</mn></mtd>
+                                <mtd><mtext>if&#xA0;</mtext><mi>i</mi><mo>=</mo><mn>0</mn><mtext>&#xA0;or&#xA0;</mtext><mi>j</mi><mo>=</mo><mn>0</mn></mtd>
+                            </mtr>
+                            <mtr>
+                                <mtd><mi>d</mi><mi>p</mi><mo>[</mo><mi>i</mi><mo>-</mo><mn>1</mn><mo>]</mo><mo>[</mo><mi>j</mi><mo>-</mo><mn>1</mn><mo>]</mo><mo>+</mo><mn>1</mn></mtd>
+                                <mtd><mtext>if&#xA0;</mtext><msub><mi>X</mi><mi>i</mi></msub><mo>=</mo><msub><mi>Y</mi><mi>j</mi></msub><mtext>&#xA0;(字元相同)</mtext></mtd>
+                            </mtr>
+                            <mtr>
+                                <mtd><mo>max</mo><mo>(</mo><mi>d</mi><mi>p</mi><mo>[</mo><mi>i</mi><mo>-</mo><mn>1</mn><mo>]</mo><mo>[</mo><mi>j</mi><mo>]</mo><mo>,</mo><mi>d</mi><mi>p</mi><mo>[</mo><mi>i</mi><mo>]</mo><mo>[</mo><mi>j</mi><mo>-</mo><mn>1</mn><mo>]</mo><mo>)</mo></mtd>
+                                <mtd><mtext>if&#xA0;</mtext><msub><mi>X</mi><mi>i</mi></msub><mo>&#x2260;</mo><msub><mi>Y</mi><mi>j</mi></msub><mtext>&#xA0;(字元不同)</mtext></mtd>
+                            </mtr>
+                        </mtable>
+                    </mrow>
+                </math>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 9: Small DP Table -->
+    <div class="slide-container" id="slide9">
+        <h2 class="slide-title">動態規劃表格 (DP Table) 實際填寫</h2>
+        <div class="content-area">
+            <div class="table-layout">
+                <p style="font-size:24px; margin-bottom:20px;">範例：求 X = <span class="mono-text">"BDC"</span> 與 Y = <span class="mono-text">"BAC"</span> 的 LCS</p>
+                <table class="small-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>0</th>
+                            <th>B</th>
+                            <th>A</th>
+                            <th>C</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>0</th>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <th>B</th>
+                            <td>0</td>
+                            <td class="highlight">1</td>
+                            <td>1</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <th>D</th>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <th>C</th>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td class="highlight">2</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="margin-top:30px; font-size:20px; text-align: center;">
+                    <span style="color:#10b981;"><i class="fa-solid fa-square"></i></span> 
+                    綠色高亮格表示字元匹配 (<span class="mono-text">X[i] == Y[j]</span>)，此時數值等於「左上方斜對角數值 + 1」。<br>
+                    其餘白色格子則取「上方」或「左方」數值較大者填入。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 10: Big DP Table Static -->
+    <div class="slide-container" id="slide10">
+        <h2 class="slide-title">完整的動態規劃表 (DP Table)</h2>
+        <div class="content-area">
+            <div class="big-table-container">
+                <table class="big-table">
+                    <tr>
+                        <th></th>
+                        <th><div style="position:relative; height: 100%;"><span style="position:absolute; top:2px; right:4px; font-size:12px">s1</span><span style="position:absolute; bottom:2px; left:4px; font-size:12px">s2</span></div></th>
+                        <th>A</th><th>C</th><th>B</th><th>B</th><th>C</th><th>A</th><th>C</th><th>B</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>0</td><td class="match-red">1</td><td>1</td><td>1</td><td class="match-red">1</td><td>1</td><td class="match-red">1</td><td>1</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>0</td><td class="match-red">1</td><td>1</td><td>1</td><td class="match-red">2</td><td>2</td><td class="match-red">2</td><td>2</td>
+                    </tr>
+                    <tr>
+                        <th>A</th>
+                        <td>0</td><td class="match-red">1</td><td>1</td><td>1</td><td>1</td><td>2</td><td class="match-red">3</td><td>3</td><td>3</td>
+                    </tr>
+                    <tr>
+                        <th>B</th>
+                        <td>0</td><td>1</td><td>1</td><td class="match-red">2</td><td class="match-red">2</td><td>2</td><td>3</td><td>3</td><td class="match-red">4</td>
+                    </tr>
+                    <tr>
+                        <th>A</th>
+                        <td>0</td><td class="match-red">1</td><td>1</td><td>2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td>4</td>
+                    </tr>
+                    <tr>
+                        <th>A</th>
+                        <td>0</td><td class="match-red">1</td><td>1</td><td>2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td>4</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>1</td><td class="match-red">2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td class="match-red">4</td><td>4</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>1</td><td class="match-red">2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td class="match-red">4</td><td>4</td>
+                    </tr>
+                </table>
+            </div>
+            <p style="text-align: center; font-size: 20px; margin-top: 25px; color: #cbd5e1;">
+                <span style="color:#ef4444; font-weight: bold;">紅色數字</span>表示該格字元匹配 (<span class="mono-text">s1[i] == s2[j]</span>)，數值為左上方加一。<br>其餘則繼承上方或左方的最大值。
+            </p>
+        </div>
+    </div>
+
+    <!-- Slide 11: Interactive Paths Demonstration -->
+    <div class="slide-container" id="slide11">
+        <h2 class="slide-title">回溯尋找解答：所有路徑演示</h2>
+        <div class="content-area" style="flex-direction: row; align-items: center; justify-content: center;">
+            <div class="path-controls">
+                <button class="path-btn" onclick="drawPath('ABAC', this)">ABAC</button>
+                <button class="path-btn" onclick="drawPath('ABCC', this)">ABCC</button>
+                <button class="path-btn" onclick="drawPath('CBAC', this)">CBAC</button>
+                <button class="path-btn" onclick="drawPath('CBCC', this)">CBCC</button>
+                <button class="path-btn" onclick="drawPath('CCAB', this)">CCAB</button>
+                <button class="path-btn" onclick="drawPath('CCAC', this)">CCAC</button>
+            </div>
+            <div class="table-overlay-container">
+                <svg id="path-svg"></svg>
+                <table class="big-table" id="interactive-table">
+                    <tr>
+                        <th></th>
+                        <th><div style="position:relative; height: 100%;"><span style="position:absolute; top:2px; right:4px; font-size:12px">s1</span><span style="position:absolute; bottom:2px; left:4px; font-size:12px">s2</span></div></th>
+                        <th>A</th><th>C</th><th>B</th><th>B</th><th>C</th><th>A</th><th>C</th><th>B</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>0</td><td class="match-red">1</td><td>1</td><td>1</td><td class="match-red">1</td><td>1</td><td class="match-red">1</td><td>1</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>0</td><td class="match-red">1</td><td>1</td><td>1</td><td class="match-red">2</td><td>2</td><td class="match-red">2</td><td>2</td>
+                    </tr>
+                    <tr>
+                        <th>A</th>
+                        <td>0</td><td class="match-red">1</td><td>1</td><td>1</td><td>1</td><td>2</td><td class="match-red">3</td><td>3</td><td>3</td>
+                    </tr>
+                    <tr>
+                        <th>B</th>
+                        <td>0</td><td>1</td><td>1</td><td class="match-red">2</td><td class="match-red">2</td><td>2</td><td>3</td><td>3</td><td class="match-red">4</td>
+                    </tr>
+                    <tr>
+                        <th>A</th>
+                        <td>0</td><td class="match-red">1</td><td>1</td><td>2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td>4</td>
+                    </tr>
+                    <tr>
+                        <th>A</th>
+                        <td>0</td><td class="match-red">1</td><td>1</td><td>2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td>4</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>1</td><td class="match-red">2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td class="match-red">4</td><td>4</td>
+                    </tr>
+                    <tr>
+                        <th>C</th>
+                        <td>0</td><td>1</td><td class="match-red">2</td><td>2</td><td>2</td><td class="match-red">3</td><td>3</td><td class="match-red">4</td><td>4</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <p style="position:absolute; bottom: 30px; font-size:18px; color:#94a3b8;"><i class="fa-solid fa-hand-pointer"></i> 點擊左側按鈕來演示每一條不同的回溯路徑與匹配字元</p>
+    </div>
+
+    <!-- Slide 12: Code Implementation Python -->
+    <div class="slide-container" id="slide12">
+        <h2 class="slide-title">程式碼實作 (Python)</h2>
+        <div class="content-area">
+            <div class="two-column" style="align-items: flex-start;">
+                <div>
+                    <p style="font-size: 22px;">我們將剛剛的公式直接翻譯成程式碼：</p>
+                    <div class="bullet-list" style="margin-top: 20px;">
+                        <ul>
+                            <li>建立一個 <span class="mono-text">(m+1) × (n+1)</span> 的二維陣列，預設為 0。</li>
+                            <li>使用雙層迴圈依序掃描兩個字串。</li>
+                            <li>根據字元是否相等，執行對應的狀態轉移。</li>
+                            <li>最後回傳表格最右下角的值 <span class="mono-text">dp[m][n]</span>。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+<pre class="code-block">
+<span class="code-keyword">def</span> <span class="code-function">get_lcs_length</span>(X: <span class="code-keyword">str</span>, Y: <span class="code-keyword">str</span>) -> <span class="code-keyword">int</span>:
+    m, n = <span class="code-function">len</span>(X), <span class="code-function">len</span>(Y)
+    <span class="code-comment"># 初始化 dp 陣列 (多開一格放 0)</span>
+    dp = [[<span class="code-number">0</span>] * (n + <span class="code-number">1</span>) <span class="code-keyword">for</span> _ <span class="code-keyword">in</span> <span class="code-function">range</span>(m + <span class="code-number">1</span>)]
+    
+    <span class="code-keyword">for</span> i <span class="code-keyword">in</span> <span class="code-function">range</span>(<span class="code-number">1</span>, m + <span class="code-number">1</span>):
+        <span class="code-keyword">for</span> j <span class="code-keyword">in</span> <span class="code-function">range</span>(<span class="code-number">1</span>, n + <span class="code-number">1</span>):
+            <span class="code-keyword">if</span> X[i-<span class="code-number">1</span>] == Y[j-<span class="code-number">1</span>]:
+                <span class="code-comment"># 字元相同：左上角 + 1</span>
+                dp[i][j] = dp[i-<span class="code-number">1</span>][j-<span class="code-number">1</span>] + <span class="code-number">1</span>
+            <span class="code-keyword">else</span>:
+                <span class="code-comment"># 字元不同：取上方或左方最大值</span>
+                dp[i][j] = <span class="code-function">max</span>(dp[i-<span class="code-number">1</span>][j], dp[i][j-<span class="code-number">1</span>])
+                
+    <span class="code-keyword">return</span> dp[m][n]
+</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 13: Code Implementation C++ -->
+    <div class="slide-container" id="slide13">
+        <h2 class="slide-title">程式碼實作 (C++)</h2>
+        <div class="content-area">
+            <div class="two-column" style="align-items: flex-start;">
+                <div>
+                    <p style="font-size: 22px;">在 C++ 中，我們推薦使用 STL 的 <span class="mono-text">vector</span> 來宣告二維陣列。</p>
+                    <p style="font-size: 22px; margin-top: 20px;">這種寫法比起傳統的指標宣告更安全，也能在宣告的同時自動把所有格子初始化為 0，省去手動寫迴圈填 0 的麻煩。</p>
+                </div>
+                <div>
+<pre class="code-block">
+<span class="code-keyword">int</span> <span class="code-function">getLCSLength</span>(string X, string Y) {
+    <span class="code-keyword">int</span> m = X.<span class="code-function">length</span>(), n = Y.<span class="code-function">length</span>();
+    
+    <span class="code-comment">// 建立 (m+1)*(n+1) 的 vector，初始為 0</span>
+    vector&lt;vector&lt;<span class="code-keyword">int</span>&gt;&gt; dp(m+<span class="code-number">1</span>, vector&lt;<span class="code-keyword">int</span>&gt;(n+<span class="code-number">1</span>, <span class="code-number">0</span>));
+    
+    <span class="code-keyword">for</span> (<span class="code-keyword">int</span> i = <span class="code-number">1</span>; i <= m; i++) {
+        <span class="code-keyword">for</span> (<span class="code-keyword">int</span> j = <span class="code-number">1</span>; j <= n; j++) {
+            <span class="code-keyword">if</span> (X[i-<span class="code-number">1</span>] == Y[j-<span class="code-number">1</span>]) {
+                dp[i][j] = dp[i-<span class="code-number">1</span>][j-<span class="code-number">1</span>] + <span class="code-number">1</span>;
+            } <span class="code-keyword">else</span> {
+                dp[i][j] = <span class="code-function">max</span>(dp[i-<span class="code-number">1</span>][j], dp[i][j-<span class="code-number">1</span>]);
+            }
+        }
+    }
+    <span class="code-keyword">return</span> dp[m][n];
+}
+</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 14: Highlighted_Numbers (Complexity) -->
+    <div class="slide-container" id="slide14">
+        <h2 class="slide-title">演算法複雜度分析</h2>
+        <div class="content-area">
+            <div class="two-column highlight-numbers-layout">
+                <div>
+                    <div class="number">
+                        <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>O</mi><mo>(</mo><mi>M</mi><mo>&#xD7;</mo><mi>N</mi><mo>)</mo></math>
+                    </div>
+                    <div class="number-label">時間複雜度</div>
+                </div>
+                <div>
+                    <h3 style="font-size:32px; color:#f8fafc; margin-bottom:20px;">極致的空間優化</h3>
+                    <p style="font-size:22px;">基本的 DP 解法需填滿一個 M 乘 N 的陣列，故空間複雜度亦為 <span class="mono-text">O(M×N)</span>。</p>
+                    <p style="font-size:22px; margin-top:15px;">但在計算時，我們發現轉移方程式<strong>永遠只會依賴「上一列」與「當前列」</strong>。利用「滾動陣列 (Rolling Array)」技巧，只保留兩列空間交替使用，可將空間複雜度大幅降至：</p>
+                    <div style="text-align:center; margin-top:20px;">
+                        <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>O</mi><mo>(</mo><mo>min</mo><mo>(</mo><mi>M</mi><mo>,</mo><mi>N</mi><mo>)</mo><mo>)</mo></math>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 15: The End -->
+    <div class="slide-container" id="slide15">
+        <div class="content-area" style="align-items: center;">
+            <div class="qa-layout">
+                <h2>結束</h2>
+                <p>The End</p>
+                <div class="contact-info" style="margin-top: 30px; font-family: 'Fira Code', monospace; color:#94a3b8;">
+                    Algorithm Presentation | Longest Common Subsequence
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for Path Drawing -->
+    <script>
+        const pathData = {
+            "ABAC": {
+                matches: [[4,2], [5,5], [7,7], [9,8]],
+                headerCols: [2, 5, 7, 8],
+                headerRows: [4, 5, 7, 9],
+                color: "#ec4899", // pink
+                path: [[9,9], [9,8], [8,7], [7,7], [6,6], [6,5], [5,5], [4,4], [4,3], [4,2], [3,1], [2,1], [1,1]]
+            },
+            "ABCC": {
+                matches: [[4,2], [5,4], [8,6], [9,8]],
+                headerCols: [2, 4, 6, 8],
+                headerRows: [4, 5, 8, 9],
+                color: "#3b82f6", // blue
+                path: [[9,9], [9,8], [8,7], [8,6], [7,5], [6,5], [5,5], [5,4], [4,3], [4,2], [3,1], [2,1], [1,1]]
+            },
+            "CBAC": {
+                matches: [[3,3], [5,5], [7,7], [9,8]],
+                headerCols: [3, 5, 7, 8],
+                headerRows: [3, 5, 7, 9],
+                color: "#10b981", // green
+                path: [[9,9], [9,8], [8,7], [7,7], [6,6], [6,5], [5,5], [4,4], [3,4], [3,3], [2,2], [1,1]]
+            },
+            "CBCC": {
+                matches: [[3,3], [5,4], [8,6], [9,8]],
+                headerCols: [3, 4, 6, 8],
+                headerRows: [3, 5, 8, 9],
+                color: "#f59e0b", // yellow
+                path: [[9,9], [9,8], [8,7], [8,6], [7,5], [6,5], [5,5], [5,4], [4,3], [3,3], [2,2], [1,1]]
+            },
+            "CCAB": {
+                matches: [[2,3], [3,6], [4,7], [5,9]],
+                headerCols: [3, 6, 7, 9],
+                headerRows: [2, 3, 4, 5],
+                color: "#8b5cf6", // purple
+                path: [[9,9], [8,9], [7,9], [6,9], [5,9], [4,8], [4,7], [3,6], [2,5], [2,4], [2,3], [1,2], [1,1]]
+            },
+            "CCAC": {
+                matches: [[2,3], [3,6], [7,7], [9,8]],
+                headerCols: [3, 6, 7, 8],
+                headerRows: [2, 3, 7, 9],
+                color: "#06b6d4", // cyan
+                path: [[9,9], [9,8], [8,7], [7,7], [6,6], [5,6], [4,6], [3,6], [2,5], [2,4], [2,3], [1,2], [1,1]]
+            }
+        };
+
+        function drawPath(pathId, btnElement) {
+            // Update button styles
+            document.querySelectorAll('.path-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.borderColor = '#334155';
+                btn.style.background = '#1e293b';
+            });
+            btnElement.classList.add('active');
+            btnElement.style.borderColor = pathData[pathId].color;
+            btnElement.style.background = pathData[pathId].color + '40';
+
+            const data = pathData[pathId];
+            const table = document.getElementById('interactive-table');
+            const svg = document.getElementById('path-svg');
+
+            // Clear old highlights
+            document.querySelectorAll('#interactive-table .active-match').forEach(el => {
+                el.classList.remove('active-match');
+                el.style.backgroundColor = '';
+                el.style.boxShadow = '';
+            });
+            document.querySelectorAll('#interactive-table .active-header').forEach(el => {
+                el.classList.remove('active-header');
+                el.style.color = '';
+            });
+
+            // Highlight new matching cells
+            data.matches.forEach(([r, c]) => {
+                const cell = table.rows[r].cells[c];
+                cell.classList.add('active-match');
+                cell.style.backgroundColor = data.color + '40'; // transparent color
+                cell.style.boxShadow = `inset 0 0 10px ${data.color}`;
+            });
+
+            // Highlight row/col headers
+            data.headerCols.forEach(c => {
+                table.rows[0].cells[c].style.color = data.color;
+                table.rows[0].cells[c].classList.add('active-header');
+            });
+            data.headerRows.forEach(r => {
+                table.rows[r].cells[0].style.color = data.color;
+                table.rows[r].cells[0].classList.add('active-header');
+            });
+
+            // Calculate SVG path
+            let d = "";
+            const tableRect = table.getBoundingClientRect();
+            
+            data.path.forEach(([r, c], index) => {
+                const cell = table.rows[r].cells[c];
+                const cellRect = cell.getBoundingClientRect();
+                // Get center of cell relative to table
+                const x = cellRect.left - tableRect.left + cellRect.width / 2;
+                const y = cellRect.top - tableRect.top + cellRect.height / 2;
+
+                if (index === 0) d += `M ${x} ${y} `;
+                else d += `L ${x} ${y} `;
+            });
+
+            // Inject SVG content with glowing line
+            svg.innerHTML = `
+                <defs>
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                </defs>
+                <path class="path-line" d="${d}" stroke="${data.color}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+                <circle class="path-line" cx="${d.split(' ')[1]}" cy="${d.split(' ')[2]}" r="5" fill="${data.color}" filter="url(#glow)"/>
+            `;
+        }
+
+        // Auto-click the first path to show demo when the user scrolls to it
+        // We use a small timeout just to make sure fonts/layout are loaded
+        setTimeout(() => {
+            const firstBtn = document.querySelector('.path-btn');
+            if(firstBtn) drawPath('ABAC', firstBtn);
+        }, 500);
+    </script>
+</body>
+</html>
