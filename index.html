@@ -170,7 +170,7 @@
 
         /* Interactive Path Styling */
         .table-overlay-container { position: relative; display: inline-block; }
-        #path-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+        #path-svg, #path-svg-new { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
         .path-line { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: draw 1.2s forwards ease-in-out; }
         @keyframes draw { to { stroke-dashoffset: 0; } }
         
@@ -511,6 +511,71 @@
         </div>
     </div>
 
+
+
+    <!-- Slide 10A: LCS Recurrence Formula -->
+    <div class="slide-container" id="slide10_formula">
+        <h2 class="slide-title">LCS 的回歸關係公式</h2>
+        <div class="content-area">
+            <p style="font-size: 24px; text-align: center; margin-bottom: 26px;">
+                若令 <span class="mono-text">L(i, j)</span> 表示字串 <span class="mono-text">X[0..i-1]</span> 與 <span class="mono-text">Y[0..j-1]</span> 的最長公共子序列長度，
+                則其回歸關係可寫成：
+            </p>
+            <div id="formula-container">
+                <math xmlns="http://www.w3.org/1998/Math/MathML">
+                    <mi>L</mi><mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo>
+                    <mo>=</mo>
+                    <mrow>
+                        <mo>{</mo>
+                        <mtable columnalign="left left" columnspacing="2em" rowspacing="12pt">
+                            <mtr>
+                                <mtd><mn>0</mn></mtd>
+                                <mtd><mtext>if </mtext><mi>i</mi><mo>=</mo><mn>0</mn><mtext> or </mtext><mi>j</mi><mo>=</mo><mn>0</mn></mtd>
+                            </mtr>
+                            <mtr>
+                                <mtd><mi>L</mi><mo>(</mo><mi>i</mi><mo>-</mo><mn>1</mn><mo>,</mo><mi>j</mi><mo>-</mo><mn>1</mn><mo>)</mo><mo>+</mo><mn>1</mn></mtd>
+                                <mtd><mtext>if </mtext><msub><mi>X</mi><mi>i</mi></msub><mo>=</mo><msub><mi>Y</mi><mi>j</mi></msub></mtd>
+                            </mtr>
+                            <mtr>
+                                <mtd><mo>max</mo><mo>(</mo><mi>L</mi><mo>(</mo><mi>i</mi><mo>-</mo><mn>1</mn><mo>,</mo><mi>j</mi><mo>)</mo><mo>,</mo><mi>L</mi><mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>-</mo><mn>1</mn><mo>)</mo><mo>)</mo></mtd>
+                                <mtd><mtext>if </mtext><msub><mi>X</mi><mi>i</mi></msub><mo>&#x2260;</mo><msub><mi>Y</mi><mi>j</mi></msub></mtd>
+                            </mtr>
+                        </mtable>
+                    </mrow>
+                </math>
+            </div>
+            <p style="font-size: 22px; text-align: center; margin-top: 26px; color:#94a3b8;">
+                這個公式就是 LCS 問題能夠使用遞迴與動態規劃的核心依據。
+            </p>
+        </div>
+    </div>
+
+    <!-- Slide 10B: Recurrence Explanation -->
+    <div class="slide-container" id="slide10_explain">
+        <h2 class="slide-title">如何理解這個回歸公式？</h2>
+        <div class="content-area">
+            <div class="two-column tiled">
+                <div>
+                    <h3>字元相同</h3>
+                    <p>若 <span class="mono-text">X[i-1] == Y[j-1]</span>，代表這個字元可以直接納入 LCS。</p>
+                    <br>
+                    <p>因此答案就等於前一個子問題 <span class="mono-text">L(i-1, j-1)</span> 再加上 1。</p>
+                    <p class="mono-text" style="margin-top:18px; font-size:24px;">L(i, j) = L(i-1, j-1) + 1</p>
+                </div>
+                <div>
+                    <h3>字元不同</h3>
+                    <p>若兩字元不同，表示它們不可能同時成為同一個 LCS 的最後字元。</p>
+                    <br>
+                    <p>因此要比較兩條路：
+                    <span class="mono-text">L(i-1, j)</span> 與 <span class="mono-text">L(i, j-1)</span>，取較大者。</p>
+                    <p class="mono-text" style="margin-top:18px; font-size:24px;">L(i, j) = max(L(i-1, j), L(i, j-1))</p>
+                </div>
+            </div>
+            <p style="font-size: 22px; text-align: center; margin-top: 28px; color:#cbd5e1;">
+                也因為同一個子問題會重複被用到，所以才適合改寫成 DP 表格來避免重算。
+            </p>
+        </div>
+    </div>
     <!-- Slide 11: Interactive Paths Demonstration -->
     <div class="slide-container" id="slide11">
         <h2 class="slide-title">回溯尋找解答：所有路徑演示</h2>
@@ -588,11 +653,6 @@
                             <span style="font-weight:700;">s2 =</span>
                             <span style="display:inline-block; padding:8px 14px; background:#1e293b; border:1px solid #334155; border-radius:10px; color:#f8fafc;">CABDCABD</span>
                         </div>
-                    </div>
-                    <div style="margin-top:28px; padding:18px 20px; border-radius:12px; background:rgba(56, 189, 248, 0.08); border:1px solid rgba(56, 189, 248, 0.25);">
-                        <p style="font-size:20px; margin:0; color:#cbd5e1;">
-                            右側表格已先清空，方便你上課或報告時，逐格示範 DP 值的填寫過程。
-                        </p>
                     </div>
                 </div>
 
@@ -730,14 +790,14 @@
         <h2 class="slide-title">回溯尋找解答：所有路徑演示</h2>
         <div class="content-area" style="flex-direction: row; align-items: center; justify-content: center;">
             <div class="path-controls">
-                <button class="path-btn" onclick="drawPath('ABDCAD', this)">ABDCAD</button>
-                <button class="path-btn" onclick="drawPath('ABDCBD', this)">ABDCBD</button>
-                <button class="path-btn" onclick="drawPath('CBDCAD', this)">CBDCAD</button>
-                <button class="path-btn" onclick="drawPath('CBDCBD', this)">CBDCBD</button>
+                <button class="path-btn" onclick="drawPathNew('ABDCAD', this)">ABDCAD</button>
+                <button class="path-btn" onclick="drawPathNew('ABDCBD', this)">ABDCBD</button>
+                <button class="path-btn" onclick="drawPathNew('CBDCAD', this)">CBDCAD</button>
+                <button class="path-btn" onclick="drawPathNew('CBDCBD', this)">CBDCBD</button>
             </div>
             <div class="table-overlay-container">
-                <svg id="path-svg"></svg>
-                <table class="big-table" id="interactive-table">
+                <svg id="path-svg-new"></svg>
+                <table class="big-table" id="interactive-table-new">
                     <tr>
                         <th></th>
                         <th><div style="position:relative; height: 100%;"><span style="position:absolute; top:2px; right:4px; font-size:12px">s1</span><span style="position:absolute; bottom:2px; left:4px; font-size:12px">s2</span></div></th>
@@ -861,9 +921,6 @@
                 </table>
             </div>
         </div>
-        <p style="position:absolute; bottom: 24px; font-size:18px; color:#94a3b8; text-align:center;">
-            <i class="fa-solid fa-hand-pointer"></i> 這組字串的 LCS 長度為 6，共有 4 條合法回溯路徑可得到不同答案。
-        </p>
     </div>
 
     <!-- Slide 12: Code Implementation Python -->
@@ -957,6 +1014,131 @@
                     <div style="text-align:center; margin-top:20px;">
                         <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>O</mi><mo>(</mo><mo>min</mo><mo>(</mo><mi>M</mi><mo>,</mo><mi>N</mi><mo>)</mo><mo>)</mo></math>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Slide 14A: C++ Recurrence Memoization -->
+    <div class="slide-container" id="slide14_cpp_rec">
+        <h2 class="slide-title">程式碼實作 (C++：回歸式 + 記憶化)</h2>
+        <div class="content-area">
+            <div class="two-column" style="align-items: flex-start; gap: 36px;">
+                <div>
+                    <p style="font-size: 22px;">下面這段程式碼是把回歸公式直接翻成 C++。</p>
+                    <p style="font-size: 22px; margin-top: 18px;">為了避免重複遞迴計算，我們加入 <span class="mono-text">memo</span> 陣列做記憶化。</p>
+                    <div class="bullet-list" style="margin-top: 22px;">
+                        <ul>
+                            <li>邊界：<span class="mono-text">i == 0</span> 或 <span class="mono-text">j == 0</span> 時回傳 0。</li>
+                            <li>相同字元：左上子問題 + 1。</li>
+                            <li>不同字元：取上方與左方兩個子問題的最大值。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+<pre class="code-block" style="font-size: 14px; line-height: 1.38; padding: 20px;">
+<span class="code-keyword">#include</span> &lt;bits/stdc++.h&gt;
+<span class="code-keyword">using namespace</span> std;
+
+string X, Y;
+vector&lt;vector&lt;<span class="code-keyword">int</span>&gt;&gt; memo;
+
+<span class="code-keyword">int</span> <span class="code-function">lcs</span>(<span class="code-keyword">int</span> i, <span class="code-keyword">int</span> j) {
+    <span class="code-keyword">if</span> (i == <span class="code-number">0</span> || j == <span class="code-number">0</span>) <span class="code-keyword">return</span> <span class="code-number">0</span>;
+    <span class="code-keyword">if</span> (memo[i][j] != -<span class="code-number">1</span>) <span class="code-keyword">return</span> memo[i][j];
+
+    <span class="code-keyword">if</span> (X[i-<span class="code-number">1</span>] == Y[j-<span class="code-number">1</span>]) {
+        <span class="code-keyword">return</span> memo[i][j] = <span class="code-function">lcs</span>(i-<span class="code-number">1</span>, j-<span class="code-number">1</span>) + <span class="code-number">1</span>;
+    }
+
+    <span class="code-keyword">return</span> memo[i][j] = <span class="code-function">max</span>(<span class="code-function">lcs</span>(i-<span class="code-number">1</span>, j), <span class="code-function">lcs</span>(i, j-<span class="code-number">1</span>));
+}
+
+<span class="code-keyword">int</span> <span class="code-function">main</span>() {
+    X = <span class="code-string">"ACBDCBAD"</span>;
+    Y = <span class="code-string">"CABDCABD"</span>;
+    memo.assign(X.size() + <span class="code-number">1</span>, vector&lt;<span class="code-keyword">int</span>&gt;(Y.size() + <span class="code-number">1</span>, -<span class="code-number">1</span>));
+
+    cout &lt;&lt; <span class="code-function">lcs</span>(X.size(), Y.size()) &lt;&lt; endl;
+    <span class="code-keyword">return</span> <span class="code-number">0</span>;
+}
+</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Slide 14B: C++ All LCS Backtracking -->
+    <div class="slide-container" id="slide14_cpp_all_lcs">
+        <h2 class="slide-title">如何用回溯找出全部 LCS（C++）</h2>
+        <div class="content-area">
+            <div class="two-column" style="align-items: flex-start; gap: 32px;">
+                <div>
+                    <p style="font-size: 22px;">若只用回歸式與記憶化，我們只能求出 <strong>LCS 長度</strong>。</p>
+                    <p style="font-size: 22px; margin-top: 18px;">若要找出<strong>全部 LCS 字串</strong>，就要從 <span class="mono-text">dp[m][n]</span> 開始做回溯。</p>
+                    <div class="bullet-list" style="margin-top: 20px;">
+                        <ul>
+                            <li>字元相同：把該字元接到所有左上子問題答案後面。</li>
+                            <li>字元不同：若上方與左方都能維持最長長度，兩邊都要繼續走。</li>
+                            <li>使用 <span class="mono-text">set</span> 去除因重複字元造成的重複答案。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div>
+<pre class="code-block" style="font-size: 12.5px; line-height: 1.32; padding: 18px;">
+<span class="code-keyword">#include</span> &lt;bits/stdc++.h&gt;
+<span class="code-keyword">using namespace</span> std;
+
+string X = <span class="code-string">"ACBDCBAD"</span>;
+string Y = <span class="code-string">"CABDCABD"</span>;
+vector&lt;vector&lt;<span class="code-keyword">int</span>&gt;&gt; dp;
+map&lt;pair&lt;<span class="code-keyword">int</span>, <span class="code-keyword">int</span>&gt;, set&lt;string&gt;&gt; memoStr;
+
+set&lt;string&gt; <span class="code-function">backtrack</span>(<span class="code-keyword">int</span> i, <span class="code-keyword">int</span> j) {
+    <span class="code-keyword">if</span> (i == <span class="code-number">0</span> || j == <span class="code-number">0</span>) <span class="code-keyword">return</span> {<span class="code-string">""</span>};
+    <span class="code-keyword">if</span> (memoStr.count({i, j})) <span class="code-keyword">return</span> memoStr[{i, j}];
+
+    set&lt;string&gt; ans;
+
+    <span class="code-keyword">if</span> (X[i-<span class="code-number">1</span>] == Y[j-<span class="code-number">1</span>]) {
+        <span class="code-keyword">for</span> (<span class="code-keyword">const</span> string&amp; s : <span class="code-function">backtrack</span>(i-<span class="code-number">1</span>, j-<span class="code-number">1</span>)) {
+            ans.insert(s + X[i-<span class="code-number">1</span>]);
+        }
+    } <span class="code-keyword">else</span> {
+        <span class="code-keyword">if</span> (dp[i-<span class="code-number">1</span>][j] == dp[i][j]) {
+            set&lt;string&gt; up = <span class="code-function">backtrack</span>(i-<span class="code-number">1</span>, j);
+            ans.insert(up.begin(), up.end());
+        }
+        <span class="code-keyword">if</span> (dp[i][j-<span class="code-number">1</span>] == dp[i][j]) {
+            set&lt;string&gt; left = <span class="code-function">backtrack</span>(i, j-<span class="code-number">1</span>);
+            ans.insert(left.begin(), left.end());
+        }
+    }
+
+    <span class="code-keyword">return</span> memoStr[{i, j}] = ans;
+}
+
+<span class="code-keyword">int</span> <span class="code-function">main</span>() {
+    <span class="code-keyword">int</span> m = X.size(), n = Y.size();
+    dp.assign(m + <span class="code-number">1</span>, vector&lt;<span class="code-keyword">int</span>&gt;(n + <span class="code-number">1</span>, <span class="code-number">0</span>));
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">int</span> i = <span class="code-number">1</span>; i &lt;= m; i++) {
+        <span class="code-keyword">for</span> (<span class="code-keyword">int</span> j = <span class="code-number">1</span>; j &lt;= n; j++) {
+            <span class="code-keyword">if</span> (X[i-<span class="code-number">1</span>] == Y[j-<span class="code-number">1</span>])
+                dp[i][j] = dp[i-<span class="code-number">1</span>][j-<span class="code-number">1</span>] + <span class="code-number">1</span>;
+            <span class="code-keyword">else</span>
+                dp[i][j] = max(dp[i-<span class="code-number">1</span>][j], dp[i][j-<span class="code-number">1</span>]);
+        }
+    }
+
+    set&lt;string&gt; allLCS = <span class="code-function">backtrack</span>(m, n);
+    cout &lt;&lt; <span class="code-string">"LCS 長度："</span> &lt;&lt; dp[m][n] &lt;&lt; <span class="code-string">"\n"</span>;
+    <span class="code-keyword">for</span> (<span class="code-keyword">const</span> string&amp; s : allLCS) cout &lt;&lt; s &lt;&lt; <span class="code-string">"\n"</span>;
+}
+</pre>
                 </div>
             </div>
         </div>
@@ -1094,11 +1276,109 @@
             `;
         }
 
+
+        const pathDataNew = {
+            "ABDCAD": {
+                matches: [[3,2],[4,4],[5,5],[6,6],[7,8],[9,9]],
+                headerCols: [2,4,5,6,8,9],
+                headerRows: [3,4,5,6,7,9],
+                color: "#f59e0b",
+                path: [[9,9],[8,8],[7,8],[6,7],[6,6],[5,5],[4,4],[3,3],[3,2],[2,1],[1,1]]
+            },
+            "ABDCBD": {
+                matches: [[3,2],[4,4],[5,5],[6,6],[8,7],[9,9]],
+                headerCols: [2,4,5,6,7,9],
+                headerRows: [3,4,5,6,8,9],
+                color: "#3b82f6",
+                path: [[9,9],[8,8],[8,7],[7,6],[6,6],[5,5],[4,4],[3,3],[3,2],[2,1],[1,1]]
+            },
+            "CBDCAD": {
+                matches: [[2,3],[4,4],[5,5],[6,6],[7,8],[9,9]],
+                headerCols: [3,4,5,6,8,9],
+                headerRows: [2,4,5,6,7,9],
+                color: "#10b981",
+                path: [[9,9],[8,8],[7,8],[6,7],[6,6],[5,5],[4,4],[3,3],[2,3],[1,2],[1,1]]
+            },
+            "CBDCBD": {
+                matches: [[2,3],[4,4],[5,5],[6,6],[8,7],[9,9]],
+                headerCols: [3,4,5,6,7,9],
+                headerRows: [2,4,5,6,8,9],
+                color: "#8b5cf6",
+                path: [[9,9],[8,8],[8,7],[7,6],[6,6],[5,5],[4,4],[3,3],[2,3],[1,2],[1,1]]
+            }
+        };
+
+        function drawPathNew(pathId, btnElement) {
+            document.querySelectorAll('button[onclick*="drawPathNew"]').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.borderColor = '#334155';
+                btn.style.background = '#1e293b';
+            });
+            btnElement.classList.add('active');
+            btnElement.style.borderColor = pathDataNew[pathId].color;
+            btnElement.style.background = pathDataNew[pathId].color + '40';
+
+            const data = pathDataNew[pathId];
+            const table = document.getElementById('interactive-table-new');
+            const svg = document.getElementById('path-svg-new');
+            if (!table || !svg) return;
+
+            document.querySelectorAll('#interactive-table-new .active-match').forEach(el => {
+                el.classList.remove('active-match');
+                el.style.backgroundColor = '';
+                el.style.boxShadow = '';
+            });
+            document.querySelectorAll('#interactive-table-new .active-header').forEach(el => {
+                el.classList.remove('active-header');
+                el.style.color = '';
+            });
+
+            data.matches.forEach(([r, c]) => {
+                const cell = table.rows[r].cells[c];
+                cell.classList.add('active-match');
+                cell.style.backgroundColor = data.color + '40';
+                cell.style.boxShadow = `inset 0 0 10px ${data.color}`;
+            });
+
+            data.headerCols.forEach(c => {
+                table.rows[0].cells[c].style.color = data.color;
+                table.rows[0].cells[c].classList.add('active-header');
+            });
+            data.headerRows.forEach(r => {
+                table.rows[r].cells[0].style.color = data.color;
+                table.rows[r].cells[0].classList.add('active-header');
+            });
+
+            let d = "";
+            const tableRect = table.getBoundingClientRect();
+            data.path.forEach(([r, c], index) => {
+                const cell = table.rows[r].cells[c];
+                const cellRect = cell.getBoundingClientRect();
+                const x = cellRect.left - tableRect.left + cellRect.width / 2;
+                const y = cellRect.top - tableRect.top + cellRect.height / 2;
+                d += (index === 0 ? `M ${x} ${y} ` : `L ${x} ${y} `);
+            });
+
+            svg.innerHTML = `
+                <defs>
+                    <filter id="glow-new" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                </defs>
+                <path class="path-line" d="${d}" stroke="${data.color}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-new)"/>
+                <circle class="path-line" cx="${d.split(' ')[1]}" cy="${d.split(' ')[2]}" r="5" fill="${data.color}" filter="url(#glow-new)"/>
+            `;
+        }
+
         // Auto-click the first path to show demo when the user scrolls to it
         // We use a small timeout just to make sure fonts/layout are loaded
         setTimeout(() => {
             const firstBtn = document.querySelector('.path-btn');
             if(firstBtn) drawPath('ABAC', firstBtn);
+
+            const firstBtnNew = document.querySelector('button[onclick*="drawPathNew"]');
+            if(firstBtnNew) drawPathNew('ABDCAD', firstBtnNew);
         }, 500);
     </script>
 </body>
